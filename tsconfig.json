@@ -1,0 +1,14 @@
+{
+  "extends": "@tsconfig/node16/tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2021", "DOM"],
+    "strictNullChecks": true,
+    "outDir": "dist"
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "ts-node": {
+    "swc": true
+  }
+}
