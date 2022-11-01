@@ -1,4 +1,4 @@
-import { chromium } from "playwright";
+import { chromium, Page } from "playwright";
 import { format } from "date-fns";
 
 import { calculateTableScore, sumUserScores } from "./scoring";
@@ -9,85 +9,138 @@ interface Score {
   score: number;
 }
 
-type ScoreData = [title: string, scores: Score[]];
+interface ProgramOption {
+  title: string;
+  selected: boolean;
+}
+
+type ScoreData = { title: string; results: Score[] }[];
 
 type RankName = [rank: number, name: string];
 
-const ZenPlannerURL = "https://raincityathletics.sites.zenplanner.com/workout-leaderboard-daily-results.cfm";
+const validPrograms = ["[FB]", "[FF]", "[RBC]", "[SC]"];
 
-export const scraper = async (date: Date) => {
+export interface ScraperOptions {
+  headless: boolean;
+}
+
+export const scraper = async (ZenPlannerURL: string, date: Date, options?: ScraperOptions) => {
   const browser = await chromium.launch({
-    headless: false
+    headless: options?.headless,
   });
 
   const page = await browser.newPage();
 
-  console.log('date', formatDate(date));
+  console.log("date", zenPlannerDate(date));
 
-  await page.goto(`${ZenPlannerURL}?date=${formatDate(date)}`);
+  await page.goto(`${ZenPlannerURL}?date=${zenPlannerDate(date)}`);
 
-  const parsedTables = await page.$$eval(".skillBox", (scoreTables) => {
-    const out: { [ title: string ]: Score[] } = {};
+  const programOptions = await getProgramOptions(page);
 
-    for (const scoreTable of scoreTables) {
-      const title = scoreTable.getElementsByTagName("h2")[0].innerText;
+  console.log("shit balls", programOptions);
 
-      const resultItems = scoreTable.getElementsByClassName("personResult");
+  const summedUserScores: { [userName: string]: number } = {};
 
-      const parsedScores = Array.from(resultItems).map((result) => {
-        const [ rank, name ] = result.firstElementChild?.innerHTML.replaceAll("\n", "").split("&nbsp;") as RankName;
+  for (const programOption of programOptions) {
+    if (!programOption.selected) {
+      console.log(`Switching page to ${programOption.title}`);
 
-        return {
-          rank,
-          name,
-          score: 0
-        } as Score
-      })
-
-      out[title] = parsedScores;
+      await Promise.all([
+        page.waitForNavigation(),
+        page
+          .locator('select[name="objectid"]')
+          .selectOption({ label: programOption.title }),
+      ]);
     }
 
-    return out;
-  });
+    console.log(`Parsing option ${programOption.title}`);
 
-  const userScores: { [ userName: string]: number[] } = {};
+    const parsedTables = await getRankTables(page);
 
-  for (const [_key, table] of Object.entries(parsedTables)) {
-    for (const userScore of table) {
-      if (!userScores[userScore.name]) {
-        userScores[userScore.name] = [];
-      }
+    console.log("Tables", parsedTables);
 
-      userScores[userScore.name].push(calculateTableScore(userScore.rank, table.length))
+    const userScores = calculateScoresForAllTables(parsedTables);
+
+    console.log("User Scores", userScores);
+
+    // TODO: normalize scores
+    for (const [key, scores] of Object.entries(userScores)) {
+      summedUserScores[key] = sumUserScores(scores);
     }
   }
 
-  const summedUserScores: { [ userName: string]: number } = {};
-
-  // TODO: normalize scores
-  for (const [key, scores] of Object.entries(userScores)) {
-    summedUserScores[key] = sumUserScores(scores);
-  }
-
-  // const tableScores = Object.keys(parsedTables).map((tableName) => {
-  //   return
-
-
-  //   return {
-  //     ...user,
-  //     score: calculateScore(user.rank, parsedUsers.length),
-  //   }
-  // })
-
-  console.log('ranks', userScores, summedUserScores);
+  console.log("ranks", summedUserScores);
 
   await page.waitForTimeout(2000);
   await browser.close();
 
   return summedUserScores;
-}
+};
+
+const calculateScoresForAllTables = (scoreData: ScoreData) => {
+  const userScores: { [userName: string]: number[] } = {};
+
+  for (const table of scoreData) {
+    for (const userScore of table.results) {
+      if (!userScores[userScore.name]) {
+        userScores[userScore.name] = [];
+      }
+
+      userScores[userScore.name].push(
+        calculateTableScore(userScore.rank, table.results.length)
+      );
+    }
+  }
+
+  return userScores;
+};
+
+const getProgramOptions = async (page: Page) => {
+  const programOptions = await page
+    .locator('optgroup[label="Program"] > option')
+    .evaluateAll((options: HTMLElement[]) =>
+      options
+        .filter((option): option is HTMLElement => !!option)
+        .map(
+          (option) =>
+            ({
+              title: option.textContent!.trim(),
+              selected: option.attributes.getNamedItem("selected") !== null,
+            } as ProgramOption)
+        )
+    );
+
+  return programOptions;
+};
+
+const getRankTables = async (page: Page) => {
+  const skillBoxCount = await page.locator(".skillBox").count();
+
+  console.log(`Found ${skillBoxCount} tables on page`);
+
+  const skillBox = await page.locator(".skillBox").evaluateAll((tables) =>
+    tables.map((table) => ({
+      title: table.getElementsByTagName("h2")[0].innerText,
+      results: Array.from(table.getElementsByClassName("personResult")).map(
+        (item: Element) => {
+          const [rank, name] = item.firstElementChild?.innerHTML
+            .replaceAll("\n", "")
+            .split("&nbsp;") as RankName;
+
+          return {
+            rank,
+            name,
+            score: 0,
+          } as Score;
+        }
+      ),
+    }))
+  );
+
+  return skillBox as ScoreData;
+};
 
 // Needs to be 2022-09-26 for zenplanner
-const formatDate = (date: Date) => {
+const zenPlannerDate = (date: Date) => {
   return format(date, "yyyy-MM-dd");
 };
