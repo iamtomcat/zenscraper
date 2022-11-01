@@ -18,8 +18,6 @@ type ScoreData = { title: string; results: Score[] }[];
 
 type RankName = [rank: number, name: string];
 
-const validPrograms = ["[FB]", "[FF]", "[RBC]", "[SC]"];
-
 export interface ScraperOptions {
   headless: boolean;
 }
@@ -37,20 +35,11 @@ export const scraper = async (ZenPlannerURL: string, date: Date, options?: Scrap
 
   const programOptions = await getProgramOptions(page);
 
-  console.log("shit balls", programOptions);
-
   const summedUserScores: { [userName: string]: number } = {};
 
   for (const programOption of programOptions) {
     if (!programOption.selected) {
-      console.log(`Switching page to ${programOption.title}`);
-
-      await Promise.all([
-        page.waitForNavigation(),
-        page
-          .locator('select[name="objectid"]')
-          .selectOption({ label: programOption.title }),
-      ]);
+      await selectProgramOption(page, programOption);
     }
 
     console.log(`Parsing option ${programOption.title}`);
@@ -76,6 +65,17 @@ export const scraper = async (ZenPlannerURL: string, date: Date, options?: Scrap
 
   return summedUserScores;
 };
+
+const selectProgramOption = (page: Page, programOption: ProgramOption) => {
+  console.log(`Switching page to ${programOption.title}`);
+
+  return Promise.all([
+    page.waitForNavigation(),
+    page
+      .locator('select[name="objectid"]')
+      .selectOption({ label: programOption.title }),
+  ]);
+}
 
 const calculateScoresForAllTables = (scoreData: ScoreData) => {
   const userScores: { [userName: string]: number[] } = {};
