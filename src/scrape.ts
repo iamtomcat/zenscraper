@@ -1,4 +1,5 @@
-import { chromium, Page } from "playwright";
+import { launchChromium} from "playwright-aws-lambda";
+import { Page } from "playwright-core";
 import { format } from "date-fns";
 
 import { calculateTableScore, sumUserScores } from "./scoring";
@@ -23,9 +24,7 @@ export interface ScraperOptions {
 }
 
 export const scraper = async (ZenPlannerURL: string, date: Date, options?: ScraperOptions) => {
-  const browser = await chromium.launch({
-    headless: options?.headless,
-  });
+  const browser = await launchChromium(options);
 
   const page = await browser.newPage();
 
@@ -124,7 +123,7 @@ const getRankTables = async (page: Page) => {
       results: Array.from(table.getElementsByClassName("personResult")).map(
         (item: Element) => {
           const [rank, name] = item.firstElementChild?.innerHTML
-            .replaceAll("\n", "")
+            .replace(/\n/g, "")
             .split("&nbsp;") as RankName;
 
           return {

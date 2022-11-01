@@ -1,0 +1,12 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "zen-scraper"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-e3wg89i9bd0l"
+s3_prefix = "zen-scraper"
+region = "ca-central-1"
+profile = "personal"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = ["ZenScraper=674117698049.dkr.ecr.ca-central-1.amazonaws.com/zenscraper1ac4bc0f/zenscraper937135ddrepo"]

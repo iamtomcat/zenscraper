@@ -17,14 +17,14 @@ Transform:
 Resources:
   # This is the Lambda function definition associated with the source code: sqs-payload-logger.js. For all available properties, see
   # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-  ScheduledEventLogger:
+  ZenScraper:
     Type: AWS::Serverless::Function
     Properties:
+      PackageType: Image
       Description: A Lambda function that logs the payload of messages sent to an associated SQS queue.
-      Runtime: nodejs16.x
       Architectures:
         - x86_64
-      Handler: src/handlers/scheduled-event-logger.scheduledEventLoggerHandler
+      # CodeUri: src/
       # This property associates this Lambda function with a scheduled CloudWatch Event. For all available properties, see
       # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#schedule
       # This example runs every hour.
@@ -33,11 +33,12 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: cron(0 * * * ? *)
-      MemorySize: 128
+    Metadata: # Manage esbuild properties
+      DockerTag: nodejs16.x-v1
+      DockerContext: ./
+      Dockerfile: Dockerfile
+      MemorySize: 512
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Tracing: Active
-  Api:
-    TracingEnabled: True
     Timeout: 100
