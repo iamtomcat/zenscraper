@@ -16,12 +16,18 @@ export const incrementLeaderboardItems = async (
   }
 };
 
-export const addItemsToLeaderboard = (
+export const deleteAndAddItemsToLeaderboard = (
   leaderboard: string,
   scores: ScoreMember<string>[]
 ) => {
+  const pipeline = redis.pipeline();
+
+  pipeline.del(leaderboard);
+
   const scoreSlice = scores.slice(1);
-  return redis.zadd<string>(leaderboard, scores[0], ...scoreSlice);
+  pipeline.zadd<string>(leaderboard, scores[0], ...scoreSlice);
+
+  return pipeline.exec();
 };
 
 export const deleteKey = async (key: string) => {
@@ -34,7 +40,7 @@ export interface UserHistoryData {
 }
 
 export const userHistoryKey = (userName: string) => {
-  return `user:${userName}:history`;
+  return keyBuilder(["user", userName, "history"]);
 };
 
 export const addToUserHistoricalData = async (

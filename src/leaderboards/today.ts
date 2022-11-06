@@ -1,7 +1,7 @@
 import { ScoreMember } from "@upstash/redis/types/pkg/commands/zadd";
 
 import { SummedUserScore } from "../scrape";
-import { addItemsToLeaderboard, deleteKey } from "../upstash";
+import { deleteAndAddItemsToLeaderboard, deleteKey } from "../upstash";
 
 export const buildTodayLeaderBoard = async (
   companyName: string,
@@ -16,9 +16,7 @@ export const buildTodayLeaderBoard = async (
 
   const key = todayLeaderBoardKey(companyName);
 
-  await deleteKey(key);
-
-  await addItemsToLeaderboard(key, scoreMembers);
+  await deleteAndAddItemsToLeaderboard(key, scoreMembers);
 };
 
 const todayLeaderBoardKey = (companyName: string) =>
