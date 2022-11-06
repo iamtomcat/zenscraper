@@ -1,4 +1,4 @@
-import { launchChromium} from "playwright-aws-lambda";
+import { launchChromium } from "playwright-aws-lambda";
 import { Page } from "playwright-core";
 import { format } from "date-fns";
 
@@ -19,11 +19,19 @@ type ScoreData = { title: string; results: Score[] }[];
 
 type RankName = [rank: number, name: string];
 
+export interface SummedUserScore {
+  [userName: string]: number;
+}
+
 export interface ScraperOptions {
   headless: boolean;
 }
 
-export const scraper = async (ZenPlannerURL: string, date: Date, options?: ScraperOptions) => {
+export const scraper = async (
+  ZenPlannerURL: string,
+  date: Date,
+  options?: ScraperOptions
+) => {
   const browser = await launchChromium(options);
 
   const page = await browser.newPage();
@@ -34,7 +42,7 @@ export const scraper = async (ZenPlannerURL: string, date: Date, options?: Scrap
 
   const programOptions = await getProgramOptions(page);
 
-  const summedUserScores: { [userName: string]: number } = {};
+  const summedUserScores: SummedUserScore = {};
 
   for (const programOption of programOptions) {
     if (!programOption.selected) {
@@ -74,7 +82,7 @@ const selectProgramOption = (page: Page, programOption: ProgramOption) => {
       .locator('select[name="objectid"]')
       .selectOption({ label: programOption.title }),
   ]);
-}
+};
 
 const calculateScoresForAllTables = (scoreData: ScoreData) => {
   const userScores: { [userName: string]: number[] } = {};

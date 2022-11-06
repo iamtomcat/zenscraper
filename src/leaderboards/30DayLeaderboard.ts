@@ -17,5 +17,5 @@ export const rebuild30DayLeaderboard = async (historyKeys: string[]) => {
 
   console.log("stuff", items);
 
-  incrementLeaderboardItems("leaderboard:30day", items);
+  await incrementLeaderboardItems("leaderboard:30day", items);
 };

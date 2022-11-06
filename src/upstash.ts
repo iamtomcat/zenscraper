@@ -16,33 +16,60 @@ export const incrementLeaderboardItems = async (
   }
 };
 
-export const setupScoresAndMembers = (): ScoreMember<string>[] => {
-  return [{ member: "", score: 0 }];
+export const addItemsToLeaderboard = (
+  leaderboard: string,
+  scores: ScoreMember<string>[],
+) => {
+  const scoreSlice = scores.slice(1);
+  return redis.zadd<string>(leaderboard, scores[0], ...scoreSlice);
 };
+
+export const deleteKey = async (key: string) => {
+  return redis.del(key);
+}
 
 export interface UserHistoryData {
   name: string;
   score: number;
 }
 
-// TODO: pass in dd-MM-yyyy date to be used as a key
+export const userHistoryKey = (userName: string) => {
+  return `user:${userName}:history`;
+};
+
 export const addToUserHistoricalData = async (
   date: Date,
   userData: UserHistoryData[]
 ) => {
+  const pipeline = redis.pipeline();
+
   for (const data of userData) {
     const name = data.name.replace(" ", "-");
 
-    await redis.zadd<UserHistoryData>(
-      `user:${name}:history`,
+    pipeline.zadd<UserHistoryData>(
+      userHistoryKey(name),
       { nx: true },
       { score: date.getTime(), member: data }
     );
   }
+
+  await pipeline.exec();
 };
 
-export const getUserHistoryKeys = () => {
-  return redis.keys("user:*:history");
+const usersKey = (companyName: string) => {
+  return [companyName, "users"].join(":");
+};
+
+export const addUsersToSet = (companyName: string, userNames: string[]) => {
+  const key = usersKey(companyName);
+
+  return redis.sadd(key, userNames);
+};
+
+export const getCurrentUsersList = (companyName: string) => {
+  const key = usersKey(companyName);
+
+  return redis.smembers(key);
 };
 
 export const getUserHistoryScores = (

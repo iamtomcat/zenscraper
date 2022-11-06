@@ -1,15 +1,20 @@
-import { endOfYesterday, subHours } from "date-fns";
+import { isEqual } from "date-fns";
+import { getInstanceOfDateAtMidnight } from "./dates/dateAtMidnight";
+import { getZeroedMinutesAndSeconds } from "./dates/zeroMinutesSeconds";
 
 import {
   rebuild30DayLeaderboard,
   setupMonthlyLeaderboard,
   buildYesterday,
+  buildTodayLeaderBoard,
 } from "./leaderboards";
-import { scraper } from "./scrape";
+import { scraper, SummedUserScore } from "./scrape";
 import {
   addToUserHistoricalData,
-  getUserHistoryKeys,
+  addUsersToSet,
+  getCurrentUsersList,
   UserHistoryData,
+  userHistoryKey,
 } from "./upstash";
 
 const scrape = true;
@@ -17,21 +22,44 @@ const scrape = true;
 const ZenPlannerURL =
   "https://raincityathletics.sites.zenplanner.com/workout-leaderboard-daily-results.cfm";
 
-export const main = async () => {
-  const date = subHours(endOfYesterday(), 1);
+const companyName = "raincity";
 
-  let statsForDay: { [userName: string]: number } = {};
+export const main = async () => {
+  const currentTimeUTC = getZeroedMinutesAndSeconds(new Date());
+
+  const midnightDate = getInstanceOfDateAtMidnight(
+    currentTimeUTC,
+    "America/Vancouver"
+  );
+
+  let statsForDay: SummedUserScore = {};
 
   if (scrape) {
-    statsForDay = await scraper(ZenPlannerURL, date);
+    statsForDay = await scraper(ZenPlannerURL, currentTimeUTC);
   }
 
   console.log("poop", statsForDay);
 
-  const historyKeys = await getUserHistoryKeys();
+  await updateUserList(statsForDay);
+
+  const historyKeys = (await getCurrentUsersList(companyName)).map((userName) =>
+    userHistoryKey(userName)
+  );
 
   console.log("keys", historyKeys);
 
+  if (isEqual(currentTimeUTC, midnightDate)) {
+    await endOfDayBuild(currentTimeUTC, statsForDay, historyKeys);
+  } else {
+    await buildTodayLeaderBoard(companyName, statsForDay);
+  }
+};
+
+const endOfDayBuild = async (
+  date: Date,
+  statsForDay: SummedUserScore,
+  historyKeys: string[]
+) => {
   // 1: update hash for eash user
   await updateUserData(date, statsForDay);
 
@@ -45,10 +73,25 @@ export const main = async () => {
   await setupMonthlyLeaderboard(historyKeys);
 };
 
-const updateUserData = async (
-  date: Date,
-  statsForDay: { [userName: string]: number }
-) => {
+const updateUserList = async (statsForDay: SummedUserScore) => {
+  const currentUserList = await getCurrentUsersList(companyName);
+
+  const newUserList = [];
+
+  for (const userName of Object.keys(statsForDay)) {
+    if (!currentUserList.includes(userName)) {
+      newUserList.push(userName);
+    }
+  }
+
+  if (newUserList.length > 0) {
+    const usersAdded = await addUsersToSet(companyName, newUserList);
+
+    console.log(`${usersAdded} users added to set`);
+  }
+};
+
+const updateUserData = async (date: Date, statsForDay: SummedUserScore) => {
   if (Object.keys(statsForDay).length > 0) {
     const historicalData = Object.entries(statsForDay).map(([name, score]) => {
       return {
