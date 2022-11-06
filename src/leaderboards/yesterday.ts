@@ -1,5 +1,6 @@
-import { ScoreMember } from "@upstash/redis/types/pkg/commands/zadd";
-import { endOfYesterday, format, startOfYesterday } from "date-fns";
+import { format, startOfYesterday } from "date-fns";
+import { getEndOfDayTimeZone } from "../dates/endOfDayTimeZone";
+import { getStartOfDayTimeZone } from "../dates/startOfDayTimeZone";
 
 import { incrementLeaderboardItems } from "../upstash";
 
@@ -11,15 +12,14 @@ export const buildYesterday = async (
 ) => {
   console.log("Build Yesterday");
 
-  const items: ScoreMember<string>[] = await extractHistoryBetweenDates(
-    historyKeys,
-    startOfYesterday(),
-    endOfYesterday()
-  );
+  const start = getStartOfDayTimeZone(startOfYesterday(), "America/Vancouver");
+  const end = getEndOfDayTimeZone(startOfYesterday(), "America/Vancouver");
+
+  const items = await extractHistoryBetweenDates(historyKeys, start, end);
 
   console.log("stuff", items);
 
-  const yesterdayKey = format(endOfYesterday(), "yyyy:MM:dd");
+  const yesterdayKey = format(end, "yyyy:MM:dd");
 
   incrementLeaderboardItems(`${companyName}leaderboard:${yesterdayKey}`, items);
 };

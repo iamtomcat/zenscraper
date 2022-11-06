@@ -1,6 +1,6 @@
 import { formatInTimeZone } from "date-fns-tz";
 
-export const getInstanceOfDateAtMidnight = (
+export const getStartOfDayTimeZone = (
   instant: number | Date,
   tz: string
 ): Date => {

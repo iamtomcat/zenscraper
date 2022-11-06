@@ -1,5 +1,5 @@
 import { isEqual } from "date-fns";
-import { getInstanceOfDateAtMidnight } from "./dates/dateAtMidnight";
+import { getStartOfDayTimeZone } from "./dates/startOfDayTimeZone";
 import { getZeroedMinutesAndSeconds } from "./dates/zeroMinutesSeconds";
 
 import {
@@ -27,7 +27,8 @@ const companyName = "raincity";
 export const main = async () => {
   const currentTimeUTC = getZeroedMinutesAndSeconds(new Date());
 
-  const midnightDate = getInstanceOfDateAtMidnight(
+  // Start of Day is midnight
+  const midnightDate = getStartOfDayTimeZone(
     currentTimeUTC,
     "America/Vancouver"
   );
