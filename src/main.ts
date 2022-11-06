@@ -64,13 +64,13 @@ const endOfDayBuild = async (
   await updateUserData(date, statsForDay);
 
   // 2: rebuild 30 day leaderboard
-  await rebuild30DayLeaderboard(historyKeys);
+  await rebuild30DayLeaderboard(companyName, historyKeys);
 
   // 3: build yesterday
-  await buildYesterday(historyKeys);
+  await buildYesterday(companyName, historyKeys);
 
   // 4: Add value for monthly leaderboard
-  await setupMonthlyLeaderboard(historyKeys);
+  // await setupMonthlyLeaderboard(historyKeys);
 };
 
 const updateUserList = async (statsForDay: SummedUserScore) => {

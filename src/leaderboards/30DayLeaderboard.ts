@@ -5,7 +5,10 @@ import { incrementLeaderboardItems } from "../upstash";
 
 import { extractHistoryBetweenDates } from "./extractHistoryBetweenDates";
 
-export const rebuild30DayLeaderboard = async (historyKeys: string[]) => {
+export const rebuild30DayLeaderboard = async (
+  companyName: string,
+  historyKeys: string[]
+) => {
   const today = endOfToday();
   const thirtyDaysAgo = subDays(today, 30);
 
@@ -17,5 +20,5 @@ export const rebuild30DayLeaderboard = async (historyKeys: string[]) => {
 
   console.log("stuff", items);
 
-  await incrementLeaderboardItems("leaderboard:30day", items);
+  await incrementLeaderboardItems(`${companyName}leaderboard:30day`, items);
 };
