@@ -18,7 +18,7 @@ export const incrementLeaderboardItems = async (
 
 export const addItemsToLeaderboard = (
   leaderboard: string,
-  scores: ScoreMember<string>[],
+  scores: ScoreMember<string>[]
 ) => {
   const scoreSlice = scores.slice(1);
   return redis.zadd<string>(leaderboard, scores[0], ...scoreSlice);
@@ -26,7 +26,7 @@ export const addItemsToLeaderboard = (
 
 export const deleteKey = async (key: string) => {
   return redis.del(key);
-}
+};
 
 export interface UserHistoryData {
   name: string;
@@ -57,7 +57,7 @@ export const addToUserHistoricalData = async (
 };
 
 const usersKey = (companyName: string) => {
-  return [companyName, "users"].join(":");
+  return keyBuilder([companyName, "users"]);
 };
 
 export const addUsersToSet = (companyName: string, userNames: string[]) => {
@@ -83,4 +83,8 @@ export const getUserHistoryScores = (
     startDate.getTime(),
     { byScore: true, rev: true }
   );
+};
+
+export const keyBuilder = (items: string[]) => {
+  return items.join(":");
 };

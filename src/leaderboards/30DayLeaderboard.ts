@@ -1,7 +1,7 @@
 import { ScoreMember } from "@upstash/redis/types/pkg/commands/zadd";
 import { endOfToday, subDays } from "date-fns";
 
-import { incrementLeaderboardItems } from "../upstash";
+import { incrementLeaderboardItems, keyBuilder } from "../upstash";
 
 import { extractHistoryBetweenDates } from "./extractHistoryBetweenDates";
 
@@ -20,5 +20,7 @@ export const rebuild30DayLeaderboard = async (
 
   console.log("stuff", items);
 
-  await incrementLeaderboardItems(`${companyName}leaderboard:30day`, items);
+  const key = keyBuilder([companyName, "leaderboard", "30day"]);
+
+  await incrementLeaderboardItems(key, items);
 };

@@ -50,9 +50,9 @@ export const main = async () => {
 
   if (isEqual(currentTimeUTC, midnightDate)) {
     await endOfDayBuild(currentTimeUTC, statsForDay, historyKeys);
-  } else {
-    await buildTodayLeaderBoard(companyName, statsForDay);
   }
+
+  await buildTodayLeaderBoard(companyName, statsForDay);
 };
 
 const endOfDayBuild = async (
