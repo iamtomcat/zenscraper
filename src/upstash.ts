@@ -69,7 +69,7 @@ const usersKey = (companyName: string) => {
 export const addUsersToSet = (companyName: string, userNames: string[]) => {
   const key = usersKey(companyName);
 
-  return redis.sadd(key, userNames);
+  return redis.sadd(key, ...userNames);
 };
 
 export const getCurrentUsersList = (companyName: string) => {
