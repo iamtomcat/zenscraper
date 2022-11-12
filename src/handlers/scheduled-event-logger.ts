@@ -1,4 +1,4 @@
-import { CloudWatchLogsEvent, Context, EventBridgeEvent } from "aws-lambda";
+import { Context, EventBridgeEvent } from "aws-lambda";
 
 import { main } from "../main";
 

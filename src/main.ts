@@ -1,7 +1,12 @@
-import { isEqual } from "date-fns";
+import { env } from "process";
+
+import { isEqual, subDays } from "date-fns";
+import { utcToZonedTime } from "date-fns-tz";
+import { pino } from "pino";
+
+import { getEndOfDayTimeZone } from "./dates/endOfDayTimeZone";
 import { getStartOfDayTimeZone } from "./dates/startOfDayTimeZone";
 import { getZeroedMinutesAndSeconds } from "./dates/zeroMinutesSeconds";
-
 import {
   rebuild30DayLeaderboard,
   setupMonthlyLeaderboard,
@@ -9,13 +14,14 @@ import {
   buildTodayLeaderBoard,
 } from "./leaderboards";
 import { scraper, SummedUserScore } from "./scrape";
+import { userHistoryKey } from "./upstash";
 import {
   addToUserHistoricalData,
   addUsersToSet,
   getCurrentUsersList,
+  setupRedis,
   UserHistoryData,
-  userHistoryKey,
-} from "./upstash";
+} from "./upstash/upstash";
 
 const scrape = true;
 
@@ -24,22 +30,46 @@ const ZenPlannerURL =
 
 const companyName = "raincity";
 
+const timeZone = "America/Vancouver";
+
+const logger = pino();
+
 export const main = async () => {
+  setupRedis();
+
   const currentTimeUTC = getZeroedMinutesAndSeconds(new Date());
 
-  // Start of Day is midnight
-  const midnightDate = getStartOfDayTimeZone(
+  const currentTimeTimezone = utcToZonedTime(currentTimeUTC, timeZone);
+
+  logger.info(
+    "Current Time UTC %s, and current timezone {%s} for %s",
     currentTimeUTC,
-    "America/Vancouver"
+    timeZone,
+    currentTimeTimezone
   );
 
-  let statsForDay: SummedUserScore = {};
+  // Start of Day is midnight
+  const midnightDate = getStartOfDayTimeZone(currentTimeUTC, timeZone);
 
-  if (scrape) {
-    statsForDay = await scraper(ZenPlannerURL, currentTimeUTC);
+  const endOfDayYesterday = getEndOfDayTimeZone(
+    subDays(currentTimeUTC, 1),
+    timeZone
+  );
+
+  logger.info("end of yesterday %s", endOfDayYesterday);
+
+  const dateToScrape = isEqual(currentTimeUTC, midnightDate)
+    ? endOfDayYesterday
+    : currentTimeTimezone;
+
+  let statsForDay: SummedUserScore = {};
+  if (env.SCRAPE === "true") {
+    logger.info(`Scraping date ${dateToScrape}`);
+
+    statsForDay = await scraper(ZenPlannerURL, dateToScrape);
   }
 
-  console.log("poop", statsForDay);
+  logger.info("Stats For Today %o", statsForDay);
 
   await updateUserList(statsForDay);
 
@@ -47,31 +77,29 @@ export const main = async () => {
     userHistoryKey(userName)
   );
 
-  console.log("keys", historyKeys);
+  logger.info("keys %o", historyKeys);
 
   if (isEqual(currentTimeUTC, midnightDate)) {
-    await endOfDayBuild(currentTimeUTC, statsForDay, historyKeys);
+  await updateUserData(endOfDayYesterday, statsForDay);
+
+  await endOfDayBuild(companyName, historyKeys);
   }
 
   await buildTodayLeaderBoard(companyName, statsForDay);
 };
 
 const endOfDayBuild = async (
-  date: Date,
-  statsForDay: SummedUserScore,
-  historyKeys: string[]
+  companyName: string,
+  userHistoryKeys: string[]
 ) => {
-  // 1: update hash for eash user
-  await updateUserData(date, statsForDay);
+  // 1: rebuild 30 day leaderboard
+  await rebuild30DayLeaderboard(companyName, userHistoryKeys);
 
-  // 2: rebuild 30 day leaderboard
-  await rebuild30DayLeaderboard(companyName, historyKeys);
+  // 2: build yesterday
+  await buildYesterday(companyName, userHistoryKeys);
 
-  // 3: build yesterday
-  await buildYesterday(companyName, historyKeys);
-
-  // 4: Add value for monthly leaderboard
-  // await setupMonthlyLeaderboard(historyKeys);
+  // 3: Add value for monthly leaderboard
+  // await setupMonthlyLeaderboard(companyName, userHistoryKeys);
 };
 
 const updateUserList = async (statsForDay: SummedUserScore) => {
@@ -88,7 +116,7 @@ const updateUserList = async (statsForDay: SummedUserScore) => {
   if (newUserList.length > 0) {
     const usersAdded = await addUsersToSet(companyName, newUserList);
 
-    console.log(`${usersAdded} users added to set`);
+    logger.info(`${usersAdded} users added to set`);
   }
 };
 

@@ -1,7 +1,7 @@
 import { ScoreMember } from "@upstash/redis/types/pkg/commands/zadd";
 
 import { SummedUserScore } from "../scrape";
-import { deleteAndAddItemsToLeaderboard, deleteKey } from "../upstash";
+import { deleteAndAddItemsToLeaderboard, leaderboardKeyBuilder } from "../upstash";
 
 export const buildTodayLeaderBoard = async (
   companyName: string,
@@ -14,10 +14,11 @@ export const buildTodayLeaderBoard = async (
     } as ScoreMember<string>;
   });
 
-  const key = todayLeaderBoardKey(companyName);
+  const key = leaderboardKeyBuilder(companyName, "today");
 
-  await deleteAndAddItemsToLeaderboard(key, scoreMembers);
+  // const key = todayLeaderBoardKey(companyName);
+
+  if (scoreMembers.length > 0) {
+    await deleteAndAddItemsToLeaderboard(key, scoreMembers);
+  }
 };
-
-const todayLeaderBoardKey = (companyName: string) =>
-  `${companyName}:leaderboard:today`;

@@ -1,11 +1,16 @@
 import { Redis } from "@upstash/redis/with-fetch";
 import { ScoreMember } from "@upstash/redis/types/pkg/commands/zadd";
 
-const redis = new Redis({
-  url: "https://usw2-kind-cub-30211.upstash.io",
-  token:
-    "AXYDASQgZGFhMWJkMDctNGNmZi00NzQzLTg1MjQtOWQyMmQwMzc5NWFiMjQwY2ZiMzQ3YWE3NDE0ZmI2MTA0NjEzOTQ3MGQzNjE=",
-});
+import { getUnixTime } from "../dates/getUnixTime";
+import { keyBuilder, userHistoryKey } from "./keyBuilder";
+
+export let redis: Redis;
+
+export const setupRedis = () => {
+  if (!redis) {
+    redis = Redis.fromEnv();
+  }
+};
 
 export const incrementLeaderboardItems = async (
   leaderboard: string,
@@ -16,20 +21,6 @@ export const incrementLeaderboardItems = async (
   }
 };
 
-export const deleteAndAddItemsToLeaderboard = (
-  leaderboard: string,
-  scores: ScoreMember<string>[]
-) => {
-  const pipeline = redis.pipeline();
-
-  pipeline.del(leaderboard);
-
-  const scoreSlice = scores.slice(1);
-  pipeline.zadd<string>(leaderboard, scores[0], ...scoreSlice);
-
-  return pipeline.exec();
-};
-
 export const deleteKey = async (key: string) => {
   return redis.del(key);
 };
@@ -38,10 +29,6 @@ export interface UserHistoryData {
   name: string;
   score: number;
 }
-
-export const userHistoryKey = (userName: string) => {
-  return keyBuilder(["user", userName, "history"]);
-};
 
 export const addToUserHistoricalData = async (
   date: Date,
@@ -55,7 +42,7 @@ export const addToUserHistoricalData = async (
     pipeline.zadd<UserHistoryData>(
       userHistoryKey(name),
       { nx: true },
-      { score: date.getTime(), member: data }
+      { score: getUnixTime(date), member: data }
     );
   }
 
@@ -85,12 +72,8 @@ export const getUserHistoryScores = (
 ) => {
   return redis.zrange<UserHistoryData[]>(
     key,
-    endDate.getTime(),
-    startDate.getTime(),
+    getUnixTime(endDate),
+    getUnixTime(startDate),
     { byScore: true, rev: true }
   );
-};
-
-export const keyBuilder = (items: string[]) => {
-  return items.join(":");
 };

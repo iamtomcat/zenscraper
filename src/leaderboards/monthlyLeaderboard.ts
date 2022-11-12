@@ -1,11 +1,15 @@
 import { ScoreMember } from "@upstash/redis/types/pkg/commands/zadd";
 import { endOfMonth, format, startOfMonth } from "date-fns";
 
-import { incrementLeaderboardItems } from "../upstash";
+import { leaderboardKeyBuilder } from "../upstash";
+import { incrementLeaderboardItems } from "../upstash/upstash";
 
 import { extractHistoryBetweenDates } from "./extractHistoryBetweenDates";
 
-export const setupMonthlyLeaderboard = async (historyKeys: string[]) => {
+export const setupMonthlyLeaderboard = async (
+  companyName: string,
+  historyKeys: string[]
+) => {
   const today = new Date();
 
   const endOfCurrentMonth = endOfMonth(today);
@@ -21,5 +25,7 @@ export const setupMonthlyLeaderboard = async (historyKeys: string[]) => {
 
   const monthYearName = format(today, "yyyy:MM");
 
-  incrementLeaderboardItems(`leaderboard:${monthYearName}`, items);
+  const monthKey = leaderboardKeyBuilder(companyName, monthYearName);
+
+  incrementLeaderboardItems(monthKey, items);
 };

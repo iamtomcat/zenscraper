@@ -12,6 +12,12 @@ Description: >-
 Transform:
 - AWS::Serverless-2016-10-31
 
+Parameters:
+  RunScraper:
+    Type: String
+    Description: Variable to turn on scraper
+    Default: true
+
 # Resources declares the AWS resources that you want to include in the stack
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
 Resources:
@@ -24,6 +30,11 @@ Resources:
       Description: A Lambda function that logs the payload of messages sent to an associated SQS queue.
       Architectures:
         - x86_64
+      Environment:
+        Variables:
+          UPSTASH_REDIS_REST_TOKEN: '{{resolve:secretsmanager:Upstash:SecretString:TOKEN}}'
+          UPSTASH_REDIS_REST_URL: '{{resolve:secretsmanager:Upstash:SecretString:URL}}'
+          SCRAPE: !Ref RunScraper
       # CodeUri: src/
       # This property associates this Lambda function with a scheduled CloudWatch Event. For all available properties, see
       # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#schedule

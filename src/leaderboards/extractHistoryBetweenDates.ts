@@ -1,6 +1,6 @@
 import { ScoreMember } from "@upstash/redis/types/pkg/commands/zadd";
 
-import { getUserHistoryScores } from "../upstash";
+import { getUserHistoryScores } from "../upstash/upstash";
 
 export const extractHistoryBetweenDates = async (
   historyKeys: string[],

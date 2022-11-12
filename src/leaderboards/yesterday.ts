@@ -1,8 +1,9 @@
-import { format, startOfYesterday } from "date-fns";
+import { format, subDays } from "date-fns";
 import { getEndOfDayTimeZone } from "../dates/endOfDayTimeZone";
 import { getStartOfDayTimeZone } from "../dates/startOfDayTimeZone";
+import { leaderboardKeyBuilder } from "../upstash";
 
-import { incrementLeaderboardItems, keyBuilder } from "../upstash";
+import { incrementLeaderboardItems } from "../upstash/upstash";
 
 import { extractHistoryBetweenDates } from "./extractHistoryBetweenDates";
 
@@ -10,8 +11,10 @@ export const buildYesterday = async (
   companyName: string,
   historyKeys: string[]
 ) => {
-  const start = getStartOfDayTimeZone(startOfYesterday(), "America/Vancouver");
-  const end = getEndOfDayTimeZone(startOfYesterday(), "America/Vancouver");
+  const yesterday = subDays(new Date(), 1);
+
+  const start = getStartOfDayTimeZone(yesterday, "America/Vancouver");
+  const end = getEndOfDayTimeZone(yesterday, "America/Vancouver");
 
   console.log("Build Yesterday", start, end);
 
@@ -21,8 +24,10 @@ export const buildYesterday = async (
 
   const yesterdayKey = format(end, "yyyy:MM:dd");
 
+  const yesterdayLeaderboardKey = leaderboardKeyBuilder(companyName, yesterdayKey);
+
   await incrementLeaderboardItems(
-    keyBuilder([companyName, "leaderboard", yesterdayKey]),
+    yesterdayLeaderboardKey,
     items
   );
 };
