@@ -27,5 +27,5 @@ export const setupMonthlyLeaderboard = async (
 
   const monthKey = leaderboardKeyBuilder(companyName, monthYearName);
 
-  incrementLeaderboardItems(monthKey, items);
+  await incrementLeaderboardItems(monthKey, items);
 };

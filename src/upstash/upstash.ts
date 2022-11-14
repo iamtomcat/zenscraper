@@ -2,7 +2,7 @@ import { Redis } from "@upstash/redis/with-fetch";
 import { ScoreMember } from "@upstash/redis/types/pkg/commands/zadd";
 
 import { getUnixTime } from "../dates/getUnixTime";
-import { keyBuilder, userHistoryKey } from "./keyBuilder";
+import { userHistoryKey, usersKey } from "./keyBuilder";
 
 export let redis: Redis;
 
@@ -31,6 +31,7 @@ export interface UserHistoryData {
 }
 
 export const addToUserHistoricalData = async (
+  companyName: string,
   date: Date,
   userData: UserHistoryData[]
 ) => {
@@ -40,17 +41,13 @@ export const addToUserHistoricalData = async (
     const name = data.name.replace(" ", "-");
 
     pipeline.zadd<UserHistoryData>(
-      userHistoryKey(name),
+      userHistoryKey(companyName, name),
       { nx: true },
       { score: getUnixTime(date), member: data }
     );
   }
 
   await pipeline.exec();
-};
-
-const usersKey = (companyName: string) => {
-  return keyBuilder([companyName, "users"]);
 };
 
 export const addUsersToSet = (companyName: string, userNames: string[]) => {

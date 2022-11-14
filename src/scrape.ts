@@ -1,6 +1,6 @@
+import { format, formatInTimeZone } from "date-fns-tz";
 import { launchChromium } from "playwright-aws-lambda";
 import { Page } from "playwright-core";
-import { format } from "date-fns";
 
 import { calculateTableScore, sumUserScores } from "./scoring";
 
@@ -32,11 +32,11 @@ export const scraper = async (
   date: Date,
   options?: ScraperOptions
 ) => {
+  console.log("date", zenPlannerDate(date));
+
   const browser = await launchChromium(options);
 
   const page = await browser.newPage();
-
-  console.log("date", zenPlannerDate(date));
 
   await page.goto(`${ZenPlannerURL}?date=${zenPlannerDate(date)}`);
 
@@ -149,5 +149,5 @@ const getRankTables = async (page: Page) => {
 
 // Needs to be 2022-09-26 for zenplanner
 const zenPlannerDate = (date: Date) => {
-  return format(date, "yyyy-MM-dd");
+  return formatInTimeZone(date, "America/Vancouver", "yyyy-MM-dd");
 };

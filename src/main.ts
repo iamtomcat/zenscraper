@@ -23,8 +23,6 @@ import {
   UserHistoryData,
 } from "./upstash/upstash";
 
-const scrape = true;
-
 const ZenPlannerURL =
   "https://raincityathletics.sites.zenplanner.com/workout-leaderboard-daily-results.cfm";
 
@@ -33,6 +31,8 @@ const companyName = "raincity";
 const timeZone = "America/Vancouver";
 
 const logger = pino();
+
+const rebuild  = env.REBUILD === "true";
 
 export const main = async () => {
   setupRedis();
@@ -74,15 +74,15 @@ export const main = async () => {
   await updateUserList(statsForDay);
 
   const historyKeys = (await getCurrentUsersList(companyName)).map((userName) =>
-    userHistoryKey(userName)
+    userHistoryKey(companyName, userName)
   );
 
   logger.info("keys %o", historyKeys);
 
-  if (isEqual(currentTimeUTC, midnightDate)) {
-  await updateUserData(endOfDayYesterday, statsForDay);
+  if (isEqual(currentTimeUTC, midnightDate) || rebuild) {
+    await updateUserData(endOfDayYesterday, statsForDay);
 
-  await endOfDayBuild(companyName, historyKeys);
+    await endOfDayBuild(companyName, historyKeys);
   }
 
   await buildTodayLeaderBoard(companyName, statsForDay);
@@ -96,7 +96,7 @@ const endOfDayBuild = async (
   await rebuild30DayLeaderboard(companyName, userHistoryKeys);
 
   // 2: build yesterday
-  await buildYesterday(companyName, userHistoryKeys);
+  await buildYesterday(companyName, timeZone, userHistoryKeys);
 
   // 3: Add value for monthly leaderboard
   // await setupMonthlyLeaderboard(companyName, userHistoryKeys);
@@ -129,6 +129,6 @@ const updateUserData = async (date: Date, statsForDay: SummedUserScore) => {
       } as UserHistoryData;
     });
 
-    await addToUserHistoricalData(date, historicalData);
+    await addToUserHistoricalData(companyName, date, historicalData);
   }
 };

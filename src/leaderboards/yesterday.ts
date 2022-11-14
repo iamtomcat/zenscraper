@@ -1,20 +1,23 @@
-import { format, subDays } from "date-fns";
+import { subDays } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { getEndOfDayTimeZone } from "../dates/endOfDayTimeZone";
 import { getStartOfDayTimeZone } from "../dates/startOfDayTimeZone";
-import { leaderboardKeyBuilder } from "../upstash";
-
-import { incrementLeaderboardItems } from "../upstash/upstash";
+import {
+  deleteAndAddItemsToLeaderboard,
+  leaderboardKeyBuilder,
+} from "../upstash";
 
 import { extractHistoryBetweenDates } from "./extractHistoryBetweenDates";
 
 export const buildYesterday = async (
   companyName: string,
+  timezone: string,
   historyKeys: string[]
 ) => {
   const yesterday = subDays(new Date(), 1);
 
-  const start = getStartOfDayTimeZone(yesterday, "America/Vancouver");
-  const end = getEndOfDayTimeZone(yesterday, "America/Vancouver");
+  const start = getStartOfDayTimeZone(yesterday, timezone);
+  const end = getEndOfDayTimeZone(yesterday, timezone);
 
   console.log("Build Yesterday", start, end);
 
@@ -22,12 +25,12 @@ export const buildYesterday = async (
 
   console.log("stuff", items);
 
-  const yesterdayKey = format(end, "yyyy:MM:dd");
+  const yesterdayKey = formatInTimeZone(end, timezone, "yyyy:MM:dd");
 
-  const yesterdayLeaderboardKey = leaderboardKeyBuilder(companyName, yesterdayKey);
-
-  await incrementLeaderboardItems(
-    yesterdayLeaderboardKey,
-    items
+  const yesterdayLeaderboardKey = leaderboardKeyBuilder(
+    companyName,
+    yesterdayKey
   );
+
+  await deleteAndAddItemsToLeaderboard(yesterdayLeaderboardKey, items);
 };
