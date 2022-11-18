@@ -16,7 +16,5 @@ export const buildTodayLeaderBoard = async (
 
   const key = leaderboardKeyBuilder(companyName, "today");
 
-  if (scoreMembers.length > 0) {
-    await deleteAndAddItemsToLeaderboard(key, scoreMembers);
-  }
+  await deleteAndAddItemsToLeaderboard(key, scoreMembers);
 };
