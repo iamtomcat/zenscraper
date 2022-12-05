@@ -35,6 +35,8 @@ const logger = pino();
 const rebuild  = env.REBUILD === "true";
 
 export const main = async () => {
+  logger.info("Upstash URL is %s", env.UPSTASH_REDIS_REST_URL)
+
   setupRedis();
 
   const currentTimeUTC = getZeroedMinutesAndSeconds(new Date());

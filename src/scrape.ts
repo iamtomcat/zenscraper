@@ -1,4 +1,4 @@
-import { format, formatInTimeZone } from "date-fns-tz";
+import { formatInTimeZone } from "date-fns-tz";
 import { launchChromium } from "playwright-aws-lambda";
 import { Page } from "playwright-core";
 
