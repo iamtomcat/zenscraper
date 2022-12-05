@@ -2,7 +2,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import { launchChromium } from "playwright-aws-lambda";
 import { Page } from "playwright-core";
 
-import { calculateTableScore, sumUserScores } from "./scoring";
+import { calculateTableScore, sumUserScores, TableScoreData } from "./scoring";
 
 interface Score {
   rank: number;
@@ -85,7 +85,7 @@ const selectProgramOption = (page: Page, programOption: ProgramOption) => {
 };
 
 const calculateScoresForAllTables = (scoreData: ScoreData) => {
-  const userScores: { [userName: string]: number[] } = {};
+  const userScores: { [userName: string]: TableScoreData[] } = {};
 
   for (const table of scoreData) {
     for (const userScore of table.results) {
