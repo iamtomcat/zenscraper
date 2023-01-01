@@ -1,7 +1,7 @@
 import { env } from "process";
 
 import { isEqual, subDays } from "date-fns";
-import { utcToZonedTime } from "date-fns-tz";
+import { formatInTimeZone, utcToZonedTime } from "date-fns-tz";
 import { pino } from "pino";
 
 import { getEndOfDayTimeZone } from "./dates/endOfDayTimeZone";
@@ -32,10 +32,12 @@ const timeZone = "America/Vancouver";
 
 const logger = pino();
 
-const rebuild  = env.REBUILD === "true";
+const rebuild = env.REBUILD === "true";
+
+const validPrograms = ["SC", "FF"];
 
 export const main = async () => {
-  logger.info("Upstash URL is %s", env.UPSTASH_REDIS_REST_URL)
+  logger.info("Upstash URL is %s", env.UPSTASH_REDIS_REST_URL);
 
   setupRedis();
 
@@ -66,9 +68,17 @@ export const main = async () => {
 
   let statsForDay: SummedUserScore = {};
   if (env.SCRAPE === "true") {
-    logger.info(`Scraping date ${dateToScrape}`);
+    logger.info(
+      `Scraping date ${dateToScrape} and is ${zenPlannerDate(
+        dateToScrape
+      )} for zen planner`
+    );
 
-    statsForDay = await scraper(ZenPlannerURL, dateToScrape);
+    const zenPlannerScrapedPage = `${ZenPlannerURL}?date=${zenPlannerDate(
+      dateToScrape
+    )}`;
+
+    statsForDay = await scraper(zenPlannerScrapedPage, { validPrograms });
   }
 
   logger.info("Stats For Today %o", statsForDay);
@@ -133,4 +143,9 @@ const updateUserData = async (date: Date, statsForDay: SummedUserScore) => {
 
     await addToUserHistoricalData(companyName, date, historicalData);
   }
+};
+
+// Needs to be 2022-09-26 for zenplanner
+const zenPlannerDate = (date: Date) => {
+  return formatInTimeZone(date, "America/Vancouver", "yyyy-MM-dd");
 };

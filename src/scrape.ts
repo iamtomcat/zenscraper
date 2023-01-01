@@ -1,4 +1,3 @@
-import { formatInTimeZone } from "date-fns-tz";
 import { launchChromium } from "playwright-aws-lambda";
 import { Page } from "playwright-core";
 
@@ -24,27 +23,32 @@ export interface SummedUserScore {
 }
 
 export interface ScraperOptions {
-  headless: boolean;
+  chromeOptions?: {
+    headless: boolean;
+  };
+  validPrograms?: string[];
 }
 
 export const scraper = async (
   ZenPlannerURL: string,
-  date: Date,
-  options?: ScraperOptions
+  scraperOptions?: ScraperOptions
 ) => {
-  console.log("date", zenPlannerDate(date));
-
-  const browser = await launchChromium(options);
+  const browser = await launchChromium(scraperOptions?.chromeOptions);
 
   const page = await browser.newPage();
 
-  await page.goto(`${ZenPlannerURL}?date=${zenPlannerDate(date)}`);
+  await page.goto(ZenPlannerURL);
 
   const programOptions = await getProgramOptions(page);
 
+  const filteredProgramOptions = filterProgramOptions(
+    programOptions,
+    scraperOptions?.validPrograms
+  );
+
   const summedUserScores: SummedUserScore = {};
 
-  for (const programOption of programOptions) {
+  for (const programOption of filteredProgramOptions) {
     if (!programOption.selected) {
       await selectProgramOption(page, programOption);
     }
@@ -61,7 +65,11 @@ export const scraper = async (
 
     // TODO: normalize scores
     for (const [key, scores] of Object.entries(userScores)) {
-      summedUserScores[key] = sumUserScores(scores);
+      if (summedUserScores[key] === undefined) {
+        summedUserScores[key] = 0;
+      }
+
+      summedUserScores[key] += sumUserScores(scores);
     }
   }
 
@@ -71,6 +79,33 @@ export const scraper = async (
   await browser.close();
 
   return summedUserScores;
+};
+
+const filterProgramOptions = (
+  programOptions: ProgramOption[],
+  validPrograms?: string[]
+) => {
+  if (validPrograms === undefined) {
+    return programOptions;
+  }
+
+  const filteredProgramOptions = programOptions.filter((option) => {
+    let value = true;
+
+    for (const validProgram of validPrograms) {
+      const found = option.title.includes(validProgram);
+
+      if (found) {
+        return true;
+      }
+
+      value = found;
+    }
+
+    return value;
+  });
+
+  return filteredProgramOptions;
 };
 
 const selectProgramOption = (page: Page, programOption: ProgramOption) => {
@@ -94,7 +129,7 @@ const calculateScoresForAllTables = (scoreData: ScoreData) => {
       }
 
       userScores[userScore.name].push(
-        calculateTableScore(userScore.rank, table.results.length)
+        calculateTableScore(userScore.rank, table.results.length, scoreData.length)
       );
     }
   }
@@ -145,9 +180,4 @@ const getRankTables = async (page: Page) => {
   );
 
   return skillBox as ScoreData;
-};
-
-// Needs to be 2022-09-26 for zenplanner
-const zenPlannerDate = (date: Date) => {
-  return formatInTimeZone(date, "America/Vancouver", "yyyy-MM-dd");
 };
