@@ -48,6 +48,12 @@ export const scraper = async (
 
   const summedUserScores: SummedUserScore = {};
 
+  if (filteredProgramOptions.length === 0) {
+    await browser.close();
+
+    return sumUserScores;
+  }
+
   for (const programOption of filteredProgramOptions) {
     if (!programOption.selected) {
       await selectProgramOption(page, programOption);

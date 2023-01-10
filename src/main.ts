@@ -36,6 +36,8 @@ const rebuild = env.REBUILD === "true";
 
 const validPrograms = ["SC", "FF"];
 
+const genders = ["male", "female"];
+
 export const main = async () => {
   logger.info("Upstash URL is %s", env.UPSTASH_REDIS_REST_URL);
 
@@ -74,11 +76,19 @@ export const main = async () => {
       )} for zen planner`
     );
 
-    const zenPlannerScrapedPage = `${ZenPlannerURL}?date=${zenPlannerDate(
-      dateToScrape
-    )}`;
 
-    statsForDay = await scraper(zenPlannerScrapedPage, { validPrograms });
+    for (const gender of genders) {
+      const zenPlannerScrapedPage = `${ZenPlannerURL}?date=${zenPlannerDate(
+        dateToScrape
+      )}&gender=${gender}`;
+
+       const statsForGender = await scraper(zenPlannerScrapedPage, { validPrograms });
+
+       statsForDay = {
+        ...statsForDay,
+        ...statsForGender
+       }
+    }
   }
 
   logger.info("Stats For Today %o", statsForDay);
