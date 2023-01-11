@@ -12,12 +12,15 @@ export interface TableScoreData {
 
 export const calculateTableScore = (
   position: number,
-  totalPeople: number,
-  totalTables: number
+  totalPeople: number
 ) => {
   const score = 3 + totalPeople - position + 1;
 
-  return { score, totalPeople, totalTables } as TableScoreData;
+  return score;
+};
+
+export const calculateTableScoreForFB = () => {
+  return 5;
 };
 
 export const sumUserScores = (scores: TableScoreData[]) => {

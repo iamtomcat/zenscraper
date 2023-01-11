@@ -1,7 +1,12 @@
 import { launchChromium } from "playwright-aws-lambda";
 import { Page } from "playwright-core";
 
-import { calculateTableScore, sumUserScores, TableScoreData } from "./scoring";
+import {
+  calculateTableScore,
+  calculateTableScoreForFB,
+  sumUserScores,
+  TableScoreData,
+} from "./scoring";
 
 interface Score {
   rank: number;
@@ -63,9 +68,11 @@ export const scraper = async (
 
     const parsedTables = await getRankTables(page);
 
-    console.log("Tables", parsedTables);
+    const filteredTables = filterTables(parsedTables);
 
-    const userScores = calculateScoresForAllTables(parsedTables);
+    console.log("Tables", parsedTables, filteredTables);
+
+    const userScores = calculateScoresForAllTables(filteredTables, programOption);
 
     console.log("User Scores", userScores);
 
@@ -85,6 +92,22 @@ export const scraper = async (
   await browser.close();
 
   return summedUserScores;
+};
+
+const filterTables = (tables: ScoreData) => {
+  const keyWords = ["notes", "warmup"];
+
+  const filteredTables = tables.filter((table) => {
+    for (const keyword of keyWords) {
+      if (table.title.toLowerCase().includes(keyword)) {
+        return false;
+      }
+    }
+
+    return true;
+ });
+
+ return filteredTables;
 };
 
 const filterProgramOptions = (
@@ -125,7 +148,10 @@ const selectProgramOption = (page: Page, programOption: ProgramOption) => {
   ]);
 };
 
-const calculateScoresForAllTables = (scoreData: ScoreData) => {
+const calculateScoresForAllTables = (
+  scoreData: ScoreData,
+  program: ProgramOption
+) => {
   const userScores: { [userName: string]: TableScoreData[] } = {};
 
   for (const table of scoreData) {
@@ -134,9 +160,17 @@ const calculateScoresForAllTables = (scoreData: ScoreData) => {
         userScores[userScore.name] = [];
       }
 
-      userScores[userScore.name].push(
-        calculateTableScore(userScore.rank, table.results.length, scoreData.length)
-      );
+      const score = program.title.toLowerCase().includes("fb")
+        ? calculateTableScoreForFB()
+        : calculateTableScore(userScore.rank, table.results.length);
+
+      const tableScoreData: TableScoreData = {
+        score,
+        totalPeople: table.results.length,
+        totalTables: scoreData.length,
+      };
+
+      userScores[userScore.name].push(tableScoreData);
     }
   }
 

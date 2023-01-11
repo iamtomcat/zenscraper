@@ -34,7 +34,7 @@ const logger = pino();
 
 const rebuild = env.REBUILD === "true";
 
-const validPrograms = ["SC", "FF"];
+const validPrograms = ["SC", "FF", "FB", "SPRT"];
 
 const genders = ["male", "female"];
 
