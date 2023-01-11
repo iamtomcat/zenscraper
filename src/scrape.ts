@@ -72,7 +72,10 @@ export const scraper = async (
 
     console.log("Tables", parsedTables, filteredTables);
 
-    const userScores = calculateScoresForAllTables(filteredTables, programOption);
+    const userScores = calculateScoresForAllTables(
+      filteredTables,
+      programOption
+    );
 
     console.log("User Scores", userScores);
 
@@ -105,9 +108,9 @@ const filterTables = (tables: ScoreData) => {
     }
 
     return true;
- });
+  });
 
- return filteredTables;
+  return filteredTables;
 };
 
 const filterProgramOptions = (

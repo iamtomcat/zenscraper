@@ -10,10 +10,7 @@ export interface TableScoreData {
   totalTables: number;
 }
 
-export const calculateTableScore = (
-  position: number,
-  totalPeople: number
-) => {
+export const calculateTableScore = (position: number, totalPeople: number) => {
   const score = 3 + totalPeople - position + 1;
 
   return score;
