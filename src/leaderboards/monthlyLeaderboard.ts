@@ -1,4 +1,4 @@
-import { ScoreMember } from "@upstash/redis/types/pkg/commands/zadd";
+import { ScoreMember } from "@upstash/redis";
 import { endOfMonth, format, startOfMonth } from "date-fns";
 
 import { leaderboardKeyBuilder } from "../upstash";

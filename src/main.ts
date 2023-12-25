@@ -9,7 +9,6 @@ import { getStartOfDayTimeZone } from "./dates/startOfDayTimeZone";
 import { getZeroedMinutesAndSeconds } from "./dates/zeroMinutesSeconds";
 import {
   rebuild30DayLeaderboard,
-  setupMonthlyLeaderboard,
   buildYesterday,
   buildTodayLeaderBoard,
 } from "./leaderboards";
@@ -22,9 +21,7 @@ import {
   setupRedis,
   UserHistoryData,
 } from "./upstash/upstash";
-
-const ZenPlannerURL =
-  "https://raincityathletics.sites.zenplanner.com/workout-leaderboard-daily-results.cfm";
+import { scrapeDay } from "./scrapeDay";
 
 const companyName = "raincity";
 
@@ -33,10 +30,6 @@ const timeZone = "America/Vancouver";
 const logger = pino();
 
 const rebuild = env.REBUILD === "true";
-
-const validPrograms = ["SC", "FF", "FB", "SPRT"];
-
-const genders = ["male", "female"];
 
 export const main = async () => {
   logger.info("Upstash URL is %s", env.UPSTASH_REDIS_REST_URL);
@@ -68,28 +61,9 @@ export const main = async () => {
     ? endOfDayYesterday
     : currentTimeTimezone;
 
-  let statsForDay: SummedUserScore = {};
-  if (env.SCRAPE === "true") {
-    logger.info(
-      `Scraping date ${dateToScrape} and is ${zenPlannerDate(
-        dateToScrape
-      )} for zen planner`
-    );
+  const scrapePage = env.SCRAPE === "true";
 
-
-    for (const gender of genders) {
-      const zenPlannerScrapedPage = `${ZenPlannerURL}?date=${zenPlannerDate(
-        dateToScrape
-      )}&gender=${gender}`;
-
-       const statsForGender = await scraper(zenPlannerScrapedPage, { validPrograms });
-
-       statsForDay = {
-        ...statsForDay,
-        ...statsForGender
-       }
-    }
-  }
+  const statsForDay = await scrapeDay(dateToScrape, scrapePage, logger);
 
   logger.info("Stats For Today %o", statsForDay);
 
@@ -127,7 +101,7 @@ const endOfDayBuild = async (
 const updateUserList = async (statsForDay: SummedUserScore) => {
   const currentUserList = await getCurrentUsersList(companyName);
 
-  const newUserList = [];
+  const newUserList: string[] = [];
 
   for (const userName of Object.keys(statsForDay)) {
     if (!currentUserList.includes(userName)) {
@@ -153,9 +127,4 @@ const updateUserData = async (date: Date, statsForDay: SummedUserScore) => {
 
     await addToUserHistoricalData(companyName, date, historicalData);
   }
-};
-
-// Needs to be 2022-09-26 for zenplanner
-const zenPlannerDate = (date: Date) => {
-  return formatInTimeZone(date, "America/Vancouver", "yyyy-MM-dd");
 };

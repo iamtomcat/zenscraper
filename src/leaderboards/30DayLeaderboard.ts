@@ -1,4 +1,4 @@
-import { ScoreMember } from "@upstash/redis/types/pkg/commands/zadd";
+import  type { ScoreMember } from "@upstash/redis";
 import { endOfToday, subDays } from "date-fns";
 import {
   deleteAndAddItemsToLeaderboard,

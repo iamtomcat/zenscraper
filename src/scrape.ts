@@ -32,6 +32,8 @@ export interface ScraperOptions {
     headless: boolean;
   };
   validPrograms?: string[];
+  // TODO: convert this to an array
+  filterTitles?: string;
 }
 
 export const scraper = async (
@@ -46,10 +48,31 @@ export const scraper = async (
 
   const programOptions = await getProgramOptions(page);
 
+  const programTitles = await getProgramTitles(page);
+
   const filteredProgramOptions = filterProgramOptions(
     programOptions,
     scraperOptions?.validPrograms
-  );
+  ).filter((option) => {
+    const filterTitles = scraperOptions?.filterTitles;
+
+    if (filterTitles) {
+      const shouldRemoveDupes =
+        programTitles.filter((title) => title.includes(filterTitles)).length >
+        0;
+
+      console.log("Should Remove Dupes", shouldRemoveDupes, programTitles);
+
+      if (shouldRemoveDupes) {
+        // TODO: Remove hard coded SC
+        return !option.title.includes("SC");
+      }
+    }
+
+    return true;
+  });
+
+  console.log("Program Options", filteredProgramOptions);
 
   const summedUserScores: SummedUserScore = {};
 
@@ -196,6 +219,16 @@ const getProgramOptions = async (page: Page) => {
     );
 
   return programOptions;
+};
+
+const getProgramTitles = async (page: Page) => {
+  const programTitles = await page
+    .locator("h1 > a")
+    .evaluateAll((titles: HTMLElement[]) =>
+      titles.map((title) => title.textContent!.trim())
+    );
+
+  return programTitles;
 };
 
 const getRankTables = async (page: Page) => {

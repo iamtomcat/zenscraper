@@ -1,4 +1,4 @@
-import { ScoreMember } from "@upstash/redis/types/pkg/commands/zadd";
+import { ScoreMember } from "@upstash/redis";
 
 import { SummedUserScore } from "../scrape";
 import { deleteAndAddItemsToLeaderboard, leaderboardKeyBuilder } from "../upstash";

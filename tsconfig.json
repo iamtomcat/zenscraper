@@ -1,7 +1,7 @@
 {
-  "extends": "@tsconfig/node16/tsconfig.json",
+  "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
-    "lib": ["es2021", "DOM"],
+    "lib": ["es2023", "DOM"],
     "strictNullChecks": true,
     "outDir": "dist"
   },

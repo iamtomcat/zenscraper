@@ -1,5 +1,5 @@
-import { Redis } from "@upstash/redis/with-fetch";
-import { ScoreMember } from "@upstash/redis/types/pkg/commands/zadd";
+import { Redis } from "@upstash/redis";
+import { ScoreMember } from "@upstash/redis";
 
 import { getUnixTime } from "../dates/getUnixTime";
 import { userHistoryKey, usersKey } from "./keyBuilder";
