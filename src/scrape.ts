@@ -32,8 +32,6 @@ export interface ScraperOptions {
     headless: boolean;
   };
   validPrograms?: string[];
-  // TODO: convert this to an array
-  filterTitles?: string;
 }
 
 export const scraper = async (
@@ -48,31 +46,10 @@ export const scraper = async (
 
   const programOptions = await getProgramOptions(page);
 
-  const programTitles = await getProgramTitles(page);
-
   const filteredProgramOptions = filterProgramOptions(
     programOptions,
     scraperOptions?.validPrograms
-  ).filter((option) => {
-    const filterTitles = scraperOptions?.filterTitles;
-
-    if (filterTitles) {
-      const shouldRemoveDupes =
-        programTitles.filter((title) => title.includes(filterTitles)).length >
-        0;
-
-      console.log("Should Remove Dupes", shouldRemoveDupes, programTitles);
-
-      if (shouldRemoveDupes) {
-        // TODO: Remove hard coded SC
-        return !option.title.includes("SC");
-      }
-    }
-
-    return true;
-  });
-
-  console.log("Program Options", filteredProgramOptions);
+  );
 
   const summedUserScores: SummedUserScore = {};
 
@@ -82,9 +59,29 @@ export const scraper = async (
     return sumUserScores;
   }
 
+  const skillsList: string[] = [];
+
   for (const programOption of filteredProgramOptions) {
     if (!programOption.selected) {
       await selectProgramOption(page, programOption);
+    }
+
+    const skillsForPage = await getSkillIDSForPage(page);
+
+    let shouldSkip = false;
+    if (skillsList.length === 0) {
+      skillsList.push(...skillsForPage);
+    } else {
+      for (const skill of skillsForPage) {
+        if (skillsList.includes(skill)) {
+          shouldSkip = true;
+          break;
+        }
+      }
+    }
+
+    if (shouldSkip) {
+      continue;
     }
 
     console.log(`Parsing option ${programOption.title}`);
@@ -221,14 +218,29 @@ const getProgramOptions = async (page: Page) => {
   return programOptions;
 };
 
-const getProgramTitles = async (page: Page) => {
+const getSkillIDSForPage = async (page: Page) => {
   const programTitles = await page
-    .locator("h1 > a")
+    .locator("h2 > a")
     .evaluateAll((titles: HTMLElement[]) =>
-      titles.map((title) => title.textContent!.trim())
+      titles.map((title) => title.getAttribute("href"))
     );
 
-  return programTitles;
+  const linkRegex = /skillID=((\w|\d)*-(\w|\d)*-(\w|\d)*-(\w|\d)*-(\w|\d)*)/;
+
+  const links = programTitles
+    .filter((title): title is string => !!title)
+    .map((url) => {
+      const regexList = linkRegex.exec(url);
+
+      if (regexList === null) {
+        return "";
+      }
+
+      return regexList[1];
+    })
+    .filter((url): url is string => !!url);
+
+  return links;
 };
 
 const getRankTables = async (page: Page) => {

@@ -32,7 +32,6 @@ export const scrapeDay = async (
 
       const statsForGender = await scraper(zenPlannerScrapedPage, {
         validPrograms,
-        filterTitles: "[FF/SC]",
       });
 
       statsForDay = {
