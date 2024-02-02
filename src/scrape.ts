@@ -40,7 +40,9 @@ export const scraper = async (
 ) => {
   const browser = await launchChromium(scraperOptions?.chromeOptions);
 
-  const page = await browser.newPage();
+  const context = await browser.newContext();
+
+  const page = await context.newPage();
 
   await page.goto(ZenPlannerURL);
 

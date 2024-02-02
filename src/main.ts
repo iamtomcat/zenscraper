@@ -12,7 +12,7 @@ import {
   buildYesterday,
   buildTodayLeaderBoard,
 } from "./leaderboards";
-import { scraper, SummedUserScore } from "./scrape";
+import { SummedUserScore } from "./scrape";
 import { userHistoryKey } from "./upstash";
 import {
   addToUserHistoricalData,

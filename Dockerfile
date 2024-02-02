@@ -1,4 +1,4 @@
-FROM node:20.10.0-bullseye-slim as build
+FROM node:18.19.0-bullseye-slim as build
 
 COPY src/ src/
 
@@ -6,7 +6,7 @@ COPY tsconfig.json package*.json ./
 
 RUN npm ci && npm run build && npm prune --production
 
-FROM public.ecr.aws/lambda/nodejs:20.2023.12.22.14
+FROM public.ecr.aws/lambda/nodejs:18.2024.01.24.17
 
 COPY --from=build node_modules/ ./node_modules
 
