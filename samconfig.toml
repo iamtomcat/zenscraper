@@ -10,3 +10,4 @@ profile = "personal"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 image_repositories = ["ZenScraper=674117698049.dkr.ecr.ca-central-1.amazonaws.com/zenscraper1ac4bc0f/zenscraper937135ddrepo"]
+resolve_s3 = true

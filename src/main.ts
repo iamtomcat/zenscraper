@@ -61,9 +61,13 @@ export const main = async () => {
     ? endOfDayYesterday
     : currentTimeTimezone;
 
-  const scrapePage = env.SCRAPE === "true";
+  const scrapePage = env.SCRAPE ?? "false";
 
-  const statsForDay = await scrapeDay(dateToScrape, scrapePage, logger);
+  const shouldScrapePage = scrapePage.toLowerCase() === "true";
+
+  logger.info("Scrape Page %s", scrapePage);
+
+  const statsForDay = await scrapeDay(dateToScrape, shouldScrapePage, logger);
 
   logger.info("Stats For Today %o", statsForDay);
 
