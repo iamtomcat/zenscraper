@@ -1,5 +1,4 @@
-import { Redis } from "@upstash/redis";
-import { ScoreMember } from "@upstash/redis";
+import { Redis, ScoreMember } from "@upstash/redis";
 
 import { getUnixTime } from "../dates/getUnixTime";
 import { userHistoryKey, usersKey } from "./keyBuilder";
@@ -28,6 +27,7 @@ export const deleteKey = async (key: string) => {
 export interface UserHistoryData {
   name: string;
   score: number;
+  zenDate: string;
 }
 
 export const addToUserHistoricalData = async (
@@ -47,7 +47,7 @@ export const addToUserHistoricalData = async (
     );
   }
 
-  await pipeline.exec();
+  return pipeline.exec();
 };
 
 export const addUsersToSet = (companyName: string, userNames: string[]) => {

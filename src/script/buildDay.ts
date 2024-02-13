@@ -21,7 +21,7 @@ const buildDay = async (date: {
 
   const statsForDay = await scrapeDay(dateToCheck, true, logger);
 
-  const historicalData = Object.entries(statsForDay).map(([name, score]) => {
+  const historicalData = Object.entries(statsForDay.userScores).map(([name, score]) => {
     return {
       name,
       score,
@@ -32,7 +32,7 @@ const buildDay = async (date: {
 };
 
 buildDay({
-  date: 14,
-  month: 8,
-  year: 2023,
+  date: 2,
+  month: 1,
+  year: 2024,
 }).then(() => {});

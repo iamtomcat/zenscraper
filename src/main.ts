@@ -1,7 +1,7 @@
 import { env } from "process";
 
-import { isEqual, subDays } from "date-fns";
-import { formatInTimeZone, utcToZonedTime } from "date-fns-tz";
+import { isEqual, set, subDays } from "date-fns";
+import { utcToZonedTime } from "date-fns-tz";
 import { pino } from "pino";
 
 import { getEndOfDayTimeZone } from "./dates/endOfDayTimeZone";
@@ -21,7 +21,7 @@ import {
   setupRedis,
   UserHistoryData,
 } from "./upstash/upstash";
-import { scrapeDay } from "./scrapeDay";
+import { ScrapeDayInfo, scrapeDay } from "./scrapeDay";
 
 const companyName = "raincity";
 
@@ -61,6 +61,8 @@ export const main = async () => {
     ? endOfDayYesterday
     : currentTimeTimezone;
 
+  logger.info("Date to Scrape %s", dateToScrape);
+
   const scrapePage = env.SCRAPE ?? "false";
 
   const shouldScrapePage = scrapePage.toLowerCase() === "true";
@@ -71,7 +73,7 @@ export const main = async () => {
 
   logger.info("Stats For Today %o", statsForDay);
 
-  await updateUserList(statsForDay);
+  await updateUserList(statsForDay.userScores);
 
   const historyKeys = (await getCurrentUsersList(companyName)).map((userName) =>
     userHistoryKey(companyName, userName)
@@ -80,12 +82,12 @@ export const main = async () => {
   logger.info("keys %o", historyKeys);
 
   if (isEqual(currentTimeUTC, midnightDate) || rebuild) {
-    await updateUserData(endOfDayYesterday, statsForDay);
+    await updateUserData(dateToScrape, statsForDay);
 
     await endOfDayBuild(companyName, historyKeys);
   }
 
-  await buildTodayLeaderBoard(companyName, statsForDay);
+  await buildTodayLeaderBoard(companyName, statsForDay.userScores);
 };
 
 const endOfDayBuild = async (
@@ -120,15 +122,22 @@ const updateUserList = async (statsForDay: SummedUserScore) => {
   }
 };
 
-const updateUserData = async (date: Date, statsForDay: SummedUserScore) => {
-  if (Object.keys(statsForDay).length > 0) {
-    const historicalData = Object.entries(statsForDay).map(([name, score]) => {
-      return {
+const updateUserData = async (date: Date, dayInfo: ScrapeDayInfo) => {
+  if (Object.keys(dayInfo.userScores).length > 0) {
+    const historicalData = Object.entries(dayInfo.userScores).map(([name, score]) => {
+      const data: UserHistoryData = {
         name,
         score,
-      } as UserHistoryData;
+        zenDate: dayInfo.zenPlannerDate,
+      };
+
+      return data;
     });
 
-    await addToUserHistoricalData(companyName, date, historicalData);
+    logger.info("Update user data %o", historicalData);
+
+    const events = await addToUserHistoricalData(companyName, date, historicalData);
+
+    logger.info("Events %o", events);
   }
 };

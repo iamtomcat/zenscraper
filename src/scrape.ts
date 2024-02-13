@@ -195,7 +195,7 @@ const calculateScoresForAllTables = (
         totalTables: scoreData.length,
       };
 
-      userScores[userScore.name].push(tableScoreData);
+      userScores[userScore.name]!.push(tableScoreData);
     }
   }
 
@@ -252,7 +252,7 @@ const getRankTables = async (page: Page) => {
 
   const skillBox = await page.locator(".skillBox").evaluateAll((tables) =>
     tables.map((table) => ({
-      title: table.getElementsByTagName("h2")[0].innerText,
+      title: table.getElementsByTagName("h2")[0]!.innerText,
       results: Array.from(table.getElementsByClassName("personResult")).map(
         (item: Element) => {
           const [rank, name] = item.firstElementChild?.innerHTML

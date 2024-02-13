@@ -10,6 +10,11 @@ const validPrograms = ["SC", "FF", "FB"];
 const ZenPlannerURL =
   "https://raincityathletics.sites.zenplanner.com/workout-leaderboard-daily-results.cfm";
 
+export interface ScrapeDayInfo {
+  zenPlannerDate: string;
+  userScores: SummedUserScore
+}
+
 export const scrapeDay = async (
   dateToScrape: Date,
   scrapePage: boolean,
@@ -41,7 +46,10 @@ export const scrapeDay = async (
     }
   }
 
-  return statsForDay;
+  return {
+    userScores: statsForDay,
+    zenPlannerDate: zenPlannerDate(dateToScrape),
+  };
 };
 
 // Needs to be 2022-09-26 for zenplanner

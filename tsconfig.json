@@ -3,6 +3,7 @@
   "compilerOptions": {
     "lib": ["es2023", "DOM"],
     "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
     "outDir": "dist"
   },
   "include": [

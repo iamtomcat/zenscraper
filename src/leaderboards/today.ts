@@ -1,7 +1,10 @@
 import { ScoreMember } from "@upstash/redis";
 
 import { SummedUserScore } from "../scrape";
-import { deleteAndAddItemsToLeaderboard, leaderboardKeyBuilder } from "../upstash";
+import {
+  deleteAndAddItemsToLeaderboard,
+  leaderboardKeyBuilder,
+} from "../upstash";
 
 export const buildTodayLeaderBoard = async (
   companyName: string,

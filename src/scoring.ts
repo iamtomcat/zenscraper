@@ -21,6 +21,10 @@ export const calculateTableScoreForFB = () => {
 };
 
 export const sumUserScores = (scores: TableScoreData[]) => {
+  if (scores.length === 0) {
+    return 0;
+  }
+
   const totalPeople = scores.reduce(
     (previousValue, current) => previousValue + current.totalPeople,
     0
@@ -32,11 +36,13 @@ export const sumUserScores = (scores: TableScoreData[]) => {
     0
   );
 
+  const totalTables = scores[0]?.totalTables ?? 1;
+
   const averagedScore =
     scores.reduce(
       (previousValue, current) => previousValue + current.score,
       0
-    ) / scores[0].totalTables;
+    ) / totalTables;
 
   console.log(
     `Normalized score ${normalizedScore} averaged score: ${averagedScore}`
